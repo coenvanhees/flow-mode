@@ -263,6 +263,11 @@ header .subtitle {
   gap: 6px;
 }
 
+.summary-usage {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
 .summary-dot {
   color: #ccc;
 }

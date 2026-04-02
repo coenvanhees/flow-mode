@@ -99,9 +99,11 @@ function stopTracking(tabId) {
   const timer = activeTabTimers.get(tabId);
   if (timer) {
     clearInterval(timer.interval);
-    const elapsed = Math.floor((Date.now() - timer.startTime) / 60000);
-    if (elapsed > 0) {
-      incrementTimeSpent(timer.domain, elapsed % 1);
+    const elapsedMs = Date.now() - timer.startTime;
+    const elapsedMinutes = elapsedMs / 60000;
+    const fractionalMinutes = elapsedMinutes % 1;
+    if (fractionalMinutes > 0) {
+      incrementTimeSpent(timer.domain, fractionalMinutes);
     }
     activeTabTimers.delete(tabId);
   }

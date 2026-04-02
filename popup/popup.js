@@ -97,8 +97,20 @@ function renderSites(blockedSites, siteOrder = []) {
     statusBadge.textContent = statusInfo.label;
     statusBadge.classList.add(statusInfo.status);
     
+    const summaryUsage = li.querySelector('.summary-usage');
     const summaryTime = li.querySelector('.summary-time');
     const summaryMode = li.querySelector('.summary-mode');
+    
+    const timeSpent = site.timeSpent || 0;
+    let usageText;
+    if (timeSpent === 0) {
+      usageText = 'No usage today';
+    } else if (timeSpent < 1) {
+      usageText = '<1m today';
+    } else {
+      usageText = `${Math.round(timeSpent)}m today`;
+    }
+    summaryUsage.textContent = usageText;
     summaryTime.textContent = site.dailyLimit === 0 ? 'No limit' : `${site.dailyLimit}m/day`;
     summaryMode.textContent = getModeLabel(site);
     
