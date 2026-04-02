@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flow Mode</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Flow Mode</h1>
+      <p class="subtitle">Block distractions, stay in flow</p>
+    </header>
+
+    <section class="add-site">
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="urlInput" 
+          placeholder="Enter domain (e.g., twitter.com)"
+          autocomplete="off"
+        >
+        <button id="addBtn" class="btn-primary">Add</button>
+      </div>
+    </section>
+
+    <section class="sites-list">
+      <div class="sites-header">
+        <span class="sites-count" id="sitesCount"></span>
+        <div class="view-toggle" id="viewToggle">
+          <button class="view-btn active" data-view="list" title="List view">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="2" width="14" height="2" rx="0.5"/>
+              <rect x="1" y="7" width="14" height="2" rx="0.5"/>
+              <rect x="1" y="12" width="14" height="2" rx="0.5"/>
+            </svg>
+          </button>
+          <button class="view-btn" data-view="card" title="Card view">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="1" width="6" height="6" rx="1"/>
+              <rect x="9" y="1" width="6" height="6" rx="1"/>
+              <rect x="1" y="9" width="6" height="6" rx="1"/>
+              <rect x="9" y="9" width="6" height="6" rx="1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="emptyState" class="empty-state">
+        <p>No sites blocked yet</p>
+        <p class="hint">Add a domain above to get started</p>
+      </div>
+      <ul id="sitesList" class="list-view"></ul>
+    </section>
+  </div>
+
+  <template id="siteTemplate">
+    <li class="site-item">
+      <div class="site-header">
+        <span class="site-domain"></span>
+        <div class="site-header-right">
+          <span class="site-status-badge"></span>
+          <button class="btn-delete" title="Remove site">×</button>
+        </div>
+      </div>
+      <div class="site-summary">
+        <span class="summary-time"></span>
+        <span class="summary-dot">·</span>
+        <span class="summary-mode"></span>
+      </div>
+      <div class="site-controls">
+        <div class="time-control">
+          <label>
+            <span class="time-label">Daily limit:</span>
+            <span class="time-value"></span>
+          </label>
+          <input type="range" class="time-slider" min="0" max="60" step="5" value="30">
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <span class="progress-text"></span>
+        </div>
+        <div class="mode-toggle">
+          <label class="toggle-label">
+            <span class="toggle-title">Hard block</span>
+            <div class="toggle">
+              <input type="checkbox" class="hard-block-toggle">
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+        <div class="mode-description"></div>
+      </div>
+    </li>
+  </template>
+
+  <script src="popup.js"></script>
+</body>
+</html>

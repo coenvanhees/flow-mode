@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Blue background -->
+  <rect width="128" height="128" fill="#3b82f6"/>
+  
+  <!-- Green circle -->
+  <circle cx="64" cy="64" r="40" fill="#22c55e"/>
+</svg>
