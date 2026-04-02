@@ -13,10 +13,15 @@ let currentView = 'list';
 
 async function getStorage() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
-  return result[STORAGE_KEY] || {
+  const data = result[STORAGE_KEY] || {
     blockedSites: {},
+    siteOrder: [],
     lastReset: new Date().toDateString()
   };
+  if (!data.siteOrder) {
+    data.siteOrder = Object.keys(data.blockedSites);
+  }
+  return data;
 }
 
 async function setStorage(data) {
@@ -58,9 +63,16 @@ function getModeLabel(site) {
   return site.hardBlock ? 'Hard block' : 'Soft block';
 }
 
-function renderSites(blockedSites) {
+let draggedItem = null;
+let draggedDomain = null;
+
+function renderSites(blockedSites, siteOrder = []) {
   sitesList.innerHTML = '';
-  const domains = Object.keys(blockedSites);
+  const allDomains = Object.keys(blockedSites);
+  
+  const orderedDomains = siteOrder.filter(d => allDomains.includes(d));
+  const newDomains = allDomains.filter(d => !siteOrder.includes(d));
+  const domains = [...orderedDomains, ...newDomains];
   
   sitesCount.textContent = domains.length === 0 ? '' : `${domains.length} site${domains.length !== 1 ? 's' : ''}`;
   
@@ -168,7 +180,7 @@ function renderSites(blockedSites) {
       if (data.blockedSites[domain]) {
         data.blockedSites[domain].dailyLimit = newLimit;
         await setStorage(data);
-        renderSites(data.blockedSites);
+        renderSites(data.blockedSites, data.siteOrder);
       }
     });
     
@@ -177,7 +189,7 @@ function renderSites(blockedSites) {
       if (data.blockedSites[domain]) {
         data.blockedSites[domain].hardBlock = e.target.checked;
         await setStorage(data);
-        renderSites(data.blockedSites);
+        renderSites(data.blockedSites, data.siteOrder);
       }
     });
     
@@ -188,8 +200,64 @@ function renderSites(blockedSites) {
       
       const data = await getStorage();
       delete data.blockedSites[domain];
+      data.siteOrder = data.siteOrder.filter(d => d !== domain);
       await setStorage(data);
-      renderSites(data.blockedSites);
+      renderSites(data.blockedSites, data.siteOrder);
+    });
+    
+    siteItem.setAttribute('draggable', 'true');
+    siteItem.dataset.domain = domain;
+    
+    siteItem.addEventListener('dragstart', (e) => {
+      if (currentView !== 'list') return;
+      draggedItem = siteItem;
+      draggedDomain = domain;
+      siteItem.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    
+    siteItem.addEventListener('dragend', () => {
+      siteItem.classList.remove('dragging');
+      draggedItem = null;
+      draggedDomain = null;
+      sitesList.querySelectorAll('.site-item').forEach(item => {
+        item.classList.remove('drag-over');
+      });
+    });
+    
+    siteItem.addEventListener('dragover', (e) => {
+      if (currentView !== 'list' || !draggedItem || draggedItem === siteItem) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      siteItem.classList.add('drag-over');
+    });
+    
+    siteItem.addEventListener('dragleave', () => {
+      siteItem.classList.remove('drag-over');
+    });
+    
+    siteItem.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      siteItem.classList.remove('drag-over');
+      
+      if (!draggedDomain || draggedDomain === domain) return;
+      
+      const data = await getStorage();
+      const allDomains = Object.keys(data.blockedSites);
+      let currentOrder = data.siteOrder.filter(d => allDomains.includes(d));
+      const newDomains = allDomains.filter(d => !data.siteOrder.includes(d));
+      currentOrder = [...currentOrder, ...newDomains];
+      
+      const fromIndex = currentOrder.indexOf(draggedDomain);
+      const toIndex = currentOrder.indexOf(domain);
+      
+      if (fromIndex !== -1 && toIndex !== -1) {
+        currentOrder.splice(fromIndex, 1);
+        currentOrder.splice(toIndex, 0, draggedDomain);
+        data.siteOrder = currentOrder;
+        await setStorage(data);
+        renderSites(data.blockedSites, data.siteOrder);
+      }
     });
     
     sitesList.appendChild(li);
@@ -227,7 +295,7 @@ async function addSite() {
   await setStorage(data);
   urlInput.value = '';
   urlInput.setCustomValidity('');
-  renderSites(data.blockedSites);
+  renderSites(data.blockedSites, data.siteOrder);
 }
 
 addBtn.addEventListener('click', addSite);
@@ -266,7 +334,7 @@ async function init() {
   setView(currentView);
   
   const data = await getStorage();
-  renderSites(data.blockedSites);
+  renderSites(data.blockedSites, data.siteOrder);
 }
 
 viewToggle.addEventListener('click', (e) => {
@@ -282,7 +350,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes[STORAGE_KEY]) {
     const newData = changes[STORAGE_KEY].newValue;
     if (newData) {
-      renderSites(newData.blockedSites);
+      renderSites(newData.blockedSites, newData.siteOrder || []);
     }
   }
 });

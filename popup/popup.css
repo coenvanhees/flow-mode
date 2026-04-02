@@ -173,6 +173,33 @@ header .subtitle {
   align-items: center;
 }
 
+.site-domain-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drag-handle {
+  color: #ccc;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #999;
+}
+
+.list-view .site-item.dragging .drag-handle {
+  cursor: grabbing;
+}
+
+.card-view .drag-handle {
+  display: none;
+}
+
 .site-domain {
   font-weight: 600;
   font-size: 14px;
@@ -256,7 +283,23 @@ header .subtitle {
 }
 
 .list-view .site-item {
-  cursor: pointer;
+  cursor: grab;
+}
+
+.list-view .site-item:active {
+  cursor: grabbing;
+}
+
+.list-view .site-item.dragging {
+  opacity: 0.5;
+  background: #e5e7eb;
+  border-style: dashed;
+}
+
+.list-view .site-item.drag-over {
+  border-color: #10b981;
+  background: #ecfdf5;
+  transform: scale(1.02);
 }
 
 .list-view .site-item.expanded {

@@ -57,7 +57,19 @@
   <template id="siteTemplate">
     <li class="site-item">
       <div class="site-header">
-        <span class="site-domain"></span>
+        <div class="site-domain-wrapper">
+          <span class="drag-handle" title="Drag to reorder">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <circle cx="3" cy="2" r="1.2"/>
+              <circle cx="9" cy="2" r="1.2"/>
+              <circle cx="3" cy="6" r="1.2"/>
+              <circle cx="9" cy="6" r="1.2"/>
+              <circle cx="3" cy="10" r="1.2"/>
+              <circle cx="9" cy="10" r="1.2"/>
+            </svg>
+          </span>
+          <span class="site-domain"></span>
+        </div>
         <div class="site-header-right">
           <span class="site-status-badge"></span>
           <button class="btn-delete" title="Remove site">×</button>
