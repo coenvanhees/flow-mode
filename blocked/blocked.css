@@ -24,6 +24,28 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
+.blocked-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.blocked-brand-logo {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.blocked-brand-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 .icon {
   margin-bottom: 24px;
   color: #dc2626;
@@ -31,13 +53,6 @@ body {
 
 .icon svg {
   opacity: 0.9;
-}
-
-h1 {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #1a1a1a;
 }
 
 .message {

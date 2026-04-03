@@ -66,17 +66,27 @@ function getModeLabel(site) {
 let draggedItem = null;
 let draggedDomain = null;
 
+function getNaiveDropSlot(clientY, items) {
+  for (let i = 0; i < items.length; i++) {
+    const r = items[i].getBoundingClientRect();
+    if (clientY < r.top + r.height / 2) return i;
+  }
+  return items.length;
+}
+
+function slotToDropIntent(slot, items) {
+  if (items.length === 0) return null;
+  if (slot < items.length) {
+    return { domain: items[slot].dataset.domain, insertBefore: true };
+  }
+  return { domain: items[items.length - 1].dataset.domain, insertBefore: false };
+}
+
 function getDropIntent(clientY, draggingEl) {
   const items = [...sitesList.querySelectorAll('.site-item')].filter((i) => i !== draggingEl);
   if (items.length === 0) return null;
-  for (const el of items) {
-    const r = el.getBoundingClientRect();
-    if (clientY < r.top + r.height / 2) {
-      return { domain: el.dataset.domain, insertBefore: true };
-    }
-  }
-  const last = items[items.length - 1];
-  return { domain: last.dataset.domain, insertBefore: false };
+  const slot = getNaiveDropSlot(clientY, items);
+  return slotToDropIntent(slot, items);
 }
 
 function clearDropIndicators() {
@@ -198,6 +208,27 @@ function renderSites(blockedSites, siteOrder = []) {
       
       if (!wasExpanded) {
         siteItem.classList.add('expanded');
+        const controls = siteItem.querySelector('.site-controls');
+        let scrolled = false;
+        const scrollExpandedIntoView = () => {
+          if (scrolled) return;
+          scrolled = true;
+          siteItem.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth',
+            inline: 'nearest'
+          });
+        };
+        const onExpandDone = (e) => {
+          if (e.target !== controls || e.propertyName !== 'grid-template-rows') return;
+          controls.removeEventListener('transitionend', onExpandDone);
+          scrollExpandedIntoView();
+        };
+        if (controls) controls.addEventListener('transitionend', onExpandDone);
+        setTimeout(() => {
+          controls?.removeEventListener('transitionend', onExpandDone);
+          scrollExpandedIntoView();
+        }, 200);
       }
     });
     
@@ -255,9 +286,15 @@ function renderSites(blockedSites, siteOrder = []) {
       draggedDomain = domain;
       siteItem.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', domain);
+      setTimeout(() => {
+        if (siteItem.classList.contains('dragging')) {
+          siteItem.classList.add('dragging-pass-through');
+        }
+      }, 0);
     });
     siteItem.addEventListener('dragend', () => {
-      siteItem.classList.remove('dragging');
+      siteItem.classList.remove('dragging', 'dragging-pass-through');
       draggedItem = null;
       draggedDomain = null;
       pendingDragFromHandle = false;
