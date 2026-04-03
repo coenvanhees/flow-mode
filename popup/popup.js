@@ -167,7 +167,8 @@ function renderSites(blockedSites, siteOrder = []) {
       if (e.target.closest('.btn-delete') || 
           e.target.closest('.time-slider') || 
           e.target.closest('.toggle') ||
-          e.target.closest('input')) {
+          e.target.closest('input') ||
+          e.target.closest('.drag-handle')) {
         return;
       }
       
@@ -217,21 +218,30 @@ function renderSites(blockedSites, siteOrder = []) {
       renderSites(data.blockedSites, data.siteOrder);
     });
     
-    siteItem.setAttribute('draggable', 'true');
     siteItem.dataset.domain = domain;
-    
+    siteItem.setAttribute('draggable', 'true');
+    let pendingDragFromHandle = false;
+    siteItem.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      pendingDragFromHandle = Boolean(e.target.closest('.drag-handle'));
+    });
     siteItem.addEventListener('dragstart', (e) => {
-      if (currentView !== 'list') return;
+      const fromHandle = pendingDragFromHandle;
+      pendingDragFromHandle = false;
+      if (currentView !== 'list' || !fromHandle) {
+        e.preventDefault();
+        return;
+      }
       draggedItem = siteItem;
       draggedDomain = domain;
       siteItem.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
-    
     siteItem.addEventListener('dragend', () => {
       siteItem.classList.remove('dragging');
       draggedItem = null;
       draggedDomain = null;
+      pendingDragFromHandle = false;
       sitesList.querySelectorAll('.site-item').forEach(item => {
         item.classList.remove('drag-over');
       });

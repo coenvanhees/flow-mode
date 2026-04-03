@@ -287,14 +287,6 @@ header .subtitle {
   display: block;
 }
 
-.list-view .site-item {
-  cursor: grab;
-}
-
-.list-view .site-item:active {
-  cursor: grabbing;
-}
-
 .list-view .site-item.dragging {
   opacity: 0.5;
   background: #e5e7eb;
