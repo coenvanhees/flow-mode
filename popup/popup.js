@@ -66,6 +66,25 @@ function getModeLabel(site) {
 let draggedItem = null;
 let draggedDomain = null;
 
+function getDropIntent(clientY, draggingEl) {
+  const items = [...sitesList.querySelectorAll('.site-item')].filter((i) => i !== draggingEl);
+  if (items.length === 0) return null;
+  for (const el of items) {
+    const r = el.getBoundingClientRect();
+    if (clientY < r.top + r.height / 2) {
+      return { domain: el.dataset.domain, insertBefore: true };
+    }
+  }
+  const last = items[items.length - 1];
+  return { domain: last.dataset.domain, insertBefore: false };
+}
+
+function clearDropIndicators() {
+  sitesList.querySelectorAll('.site-item').forEach((el) => {
+    el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+  });
+}
+
 function renderSites(blockedSites, siteOrder = []) {
   sitesList.innerHTML = '';
   const allDomains = Object.keys(blockedSites);
@@ -242,44 +261,7 @@ function renderSites(blockedSites, siteOrder = []) {
       draggedItem = null;
       draggedDomain = null;
       pendingDragFromHandle = false;
-      sitesList.querySelectorAll('.site-item').forEach(item => {
-        item.classList.remove('drag-over');
-      });
-    });
-    
-    siteItem.addEventListener('dragover', (e) => {
-      if (currentView !== 'list' || !draggedItem || draggedItem === siteItem) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      siteItem.classList.add('drag-over');
-    });
-    
-    siteItem.addEventListener('dragleave', () => {
-      siteItem.classList.remove('drag-over');
-    });
-    
-    siteItem.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      siteItem.classList.remove('drag-over');
-      
-      if (!draggedDomain || draggedDomain === domain) return;
-      
-      const data = await getStorage();
-      const allDomains = Object.keys(data.blockedSites);
-      let currentOrder = data.siteOrder.filter(d => allDomains.includes(d));
-      const newDomains = allDomains.filter(d => !data.siteOrder.includes(d));
-      currentOrder = [...currentOrder, ...newDomains];
-      
-      const fromIndex = currentOrder.indexOf(draggedDomain);
-      const toIndex = currentOrder.indexOf(domain);
-      
-      if (fromIndex !== -1 && toIndex !== -1) {
-        currentOrder.splice(fromIndex, 1);
-        currentOrder.splice(toIndex, 0, draggedDomain);
-        data.siteOrder = currentOrder;
-        await setStorage(data);
-        renderSites(data.blockedSites, data.siteOrder);
-      }
+      clearDropIndicators();
     });
     
     sitesList.appendChild(li);
@@ -364,6 +346,56 @@ viewToggle.addEventListener('click', (e) => {
   if (btn && btn.dataset.view) {
     setView(btn.dataset.view);
   }
+});
+
+sitesList.addEventListener('dragover', (e) => {
+  if (currentView !== 'list' || !draggedItem) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const intent = getDropIntent(e.clientY, draggedItem);
+  if (!intent) return;
+  clearDropIndicators();
+  const targetEl = sitesList.querySelector(
+    `.site-item[data-domain="${CSS.escape(intent.domain)}"]`
+  );
+  if (targetEl) {
+    targetEl.classList.add(
+      'drag-over',
+      intent.insertBefore ? 'drag-over-before' : 'drag-over-after'
+    );
+  }
+});
+
+sitesList.addEventListener('drop', async (e) => {
+  if (currentView !== 'list' || !draggedDomain || !draggedItem) return;
+  e.preventDefault();
+  const intent = getDropIntent(e.clientY, draggedItem);
+  clearDropIndicators();
+  if (!intent) return;
+
+  const data = await getStorage();
+  const allDomains = Object.keys(data.blockedSites);
+  let currentOrder = data.siteOrder.filter((d) => allDomains.includes(d));
+  const newDomains = allDomains.filter((d) => !data.siteOrder.includes(d));
+  currentOrder = [...currentOrder, ...newDomains];
+
+  const fromIndex = currentOrder.indexOf(draggedDomain);
+  const toIndex = currentOrder.indexOf(intent.domain);
+  if (fromIndex === -1 || toIndex === -1) return;
+
+  let insertIndex = intent.insertBefore ? toIndex : toIndex + 1;
+  if (fromIndex < insertIndex) insertIndex--;
+
+  if (insertIndex === fromIndex) return;
+
+  const next = [...currentOrder];
+  next.splice(fromIndex, 1);
+  next.splice(insertIndex, 0, draggedDomain);
+  if (next.join('\0') === currentOrder.join('\0')) return;
+
+  data.siteOrder = next;
+  await setStorage(data);
+  renderSites(data.blockedSites, data.siteOrder);
 });
 
 init();
