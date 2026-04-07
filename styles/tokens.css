@@ -1,0 +1,17 @@
+/* Shared design tokens — import once at the top of each surface stylesheet. */
+:root {
+  /* System UI stack: native fonts on each platform */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
