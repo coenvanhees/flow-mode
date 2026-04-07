@@ -373,7 +373,7 @@ async function init() {
   const viewPref = await chrome.storage.local.get(VIEW_PREF_KEY);
   currentView = viewPref[VIEW_PREF_KEY] || 'list';
   setView(currentView);
-  
+
   const data = await getStorage();
   renderSites(data.blockedSites, data.siteOrder);
 }

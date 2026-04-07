@@ -141,20 +141,41 @@ function redirectToBlocked(tabId, domain, reason, timeSpent = 0, dailyLimit = 0,
 }
 
 const bypassedTabs = new Map();
+const BYPASS_SESSION_KEY = 'bypassStartTimes';
+const BYPASS_MS = 300000;
+
+async function getBypassStartTime(tabId, domain) {
+  const key = `${tabId}-${domain}`;
+  let t = bypassedTabs.get(key);
+  if (t != null) return t;
+  const data = await chrome.storage.session.get(BYPASS_SESSION_KEY);
+  const map = data[BYPASS_SESSION_KEY] || {};
+  t = map[key];
+  if (t != null) bypassedTabs.set(key, t);
+  return t;
+}
+
+async function setBypassStartTime(tabId, domain) {
+  const key = `${tabId}-${domain}`;
+  const now = Date.now();
+  bypassedTabs.set(key, now);
+  const data = await chrome.storage.session.get(BYPASS_SESSION_KEY);
+  const map = { ...(data[BYPASS_SESSION_KEY] || {}), [key]: now };
+  await chrome.storage.session.set({ [BYPASS_SESSION_KEY]: map });
+}
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   if (details.frameId !== 0) return;
-  
+
   const result = await shouldBlock(details.url);
-  
+
   if (result.block) {
-    const bypassKey = `${details.tabId}-${result.domain}`;
-    const bypassTime = bypassedTabs.get(bypassKey);
-    
-    if (!result.hardBlock && bypassTime && (Date.now() - bypassTime) < 300000) {
+    const bypassTime = await getBypassStartTime(details.tabId, result.domain);
+
+    if (!result.hardBlock && bypassTime != null && Date.now() - bypassTime < BYPASS_MS) {
       return;
     }
-    
+
     redirectToBlocked(details.tabId, result.domain, result.reason, result.timeSpent, result.dailyLimit, result.hardBlock);
   }
 });
@@ -203,20 +224,19 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'goBack' && sender.tab) {
-    chrome.tabs.goBack(sender.tab.id).catch(() => {
-      chrome.tabs.update(sender.tab.id, { url: 'chrome://newtab' }).catch(() => {
-        chrome.tabs.remove(sender.tab.id);
+  const tabId = message.tabId ?? sender.tab?.id;
+
+  if (message.action === 'goBack' && tabId != null) {
+    chrome.tabs.goBack(tabId).catch(() => {
+      chrome.tabs.update(tabId, { url: 'chrome://newtab' }).catch(() => {
+        chrome.tabs.remove(tabId);
       });
     });
   }
-  
-  if (message.action === 'continueAnyway' && sender.tab && message.domain) {
-    const bypassKey = `${sender.tab.id}-${message.domain}`;
-    bypassedTabs.set(bypassKey, Date.now());
-    
-    const targetUrl = `https://${message.domain}`;
-    chrome.tabs.update(sender.tab.id, { url: targetUrl });
+
+  if (message.action === 'continueAnyway' && tabId != null && message.domain) {
+    void setBypassStartTime(tabId, message.domain);
+    chrome.tabs.update(tabId, { url: `https://${message.domain}` });
   }
 });
 

@@ -39,9 +39,14 @@ if (reason === 'limitReached' || reason === 'noLimit') {
 const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 document.getElementById('motivationalQuote').textContent = `"${randomQuote}"`;
 
-document.getElementById('goBackBtn').addEventListener('click', () => {
-  if (chrome.runtime && chrome.runtime.sendMessage) {
-    chrome.runtime.sendMessage({ action: 'goBack' });
+document.getElementById('goBackBtn').addEventListener('click', async () => {
+  if (!chrome.runtime?.sendMessage) {
+    window.location.href = 'https://google.com';
+    return;
+  }
+  const tab = await chrome.tabs.getCurrent();
+  if (tab?.id != null) {
+    chrome.runtime.sendMessage({ action: 'goBack', tabId: tab.id });
   } else {
     window.location.href = 'https://google.com';
   }
@@ -49,9 +54,10 @@ document.getElementById('goBackBtn').addEventListener('click', () => {
 
 const continueBtn = document.getElementById('continueBtn');
 if (continueBtn) {
-  continueBtn.addEventListener('click', () => {
-    if (chrome.runtime && chrome.runtime.sendMessage && domain) {
-      chrome.runtime.sendMessage({ action: 'continueAnyway', domain });
-    }
+  continueBtn.addEventListener('click', async () => {
+    if (!chrome.runtime?.sendMessage || !domain) return;
+    const tab = await chrome.tabs.getCurrent();
+    if (tab?.id == null) return;
+    chrome.runtime.sendMessage({ action: 'continueAnyway', domain, tabId: tab.id });
   });
 }
