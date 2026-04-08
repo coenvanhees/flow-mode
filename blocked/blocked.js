@@ -14,9 +14,24 @@ const quotes = [
 const params = new URLSearchParams(window.location.search);
 const domain = params.get('domain');
 const reason = params.get('reason') || 'blocked';
-const timeSpent = parseInt(params.get('timeSpent')) || 0;
-const dailyLimit = parseInt(params.get('dailyLimit')) || 0;
+const timeSpent = parseInt(params.get('timeSpent'), 10) || 0;
+const dailyLimit = parseInt(params.get('dailyLimit'), 10) || 0;
 const hardBlock = params.get('hardBlock') === 'true';
+const tabIdFromUrl = params.get('tabId');
+const parsedTabId =
+  tabIdFromUrl != null && tabIdFromUrl !== '' ? parseInt(tabIdFromUrl, 10) : NaN;
+const hasValidTabId = Number.isInteger(parsedTabId) && parsedTabId >= 0;
+
+async function resolveTabId() {
+  if (hasValidTabId) return parsedTabId;
+  try {
+    const tab = await chrome.tabs.getCurrent();
+    if (tab?.id != null) return tab.id;
+  } catch {
+    /* */
+  }
+  return null;
+}
 
 if (domain) {
   document.getElementById('domainName').textContent = domain;
@@ -40,24 +55,33 @@ const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 document.getElementById('motivationalQuote').textContent = `"${randomQuote}"`;
 
 document.getElementById('goBackBtn').addEventListener('click', async () => {
-  if (!chrome.runtime?.sendMessage) {
-    window.location.href = 'https://google.com';
-    return;
+  const tabId = await resolveTabId();
+  if (tabId != null && chrome.tabs?.goBack) {
+    try {
+      await chrome.tabs.goBack(tabId);
+      return;
+    } catch {
+      /* no history */
+    }
   }
-  const tab = await chrome.tabs.getCurrent();
-  if (tab?.id != null) {
-    chrome.runtime.sendMessage({ action: 'goBack', tabId: tab.id });
-  } else {
-    window.location.href = 'https://google.com';
-  }
+  window.location.href = 'https://google.com';
 });
 
 const continueBtn = document.getElementById('continueBtn');
 if (continueBtn) {
   continueBtn.addEventListener('click', async () => {
-    if (!chrome.runtime?.sendMessage || !domain) return;
-    const tab = await chrome.tabs.getCurrent();
-    if (tab?.id == null) return;
-    chrome.runtime.sendMessage({ action: 'continueAnyway', domain, tabId: tab.id });
+    if (!domain) return;
+    const tabId = await resolveTabId();
+    if (tabId == null) return;
+    continueBtn.disabled = true;
+    continueBtn.textContent = 'Redirecting…';
+    try {
+      const key = 'bypass:' + tabId;
+      await chrome.storage.local.set({ [key]: Date.now() });
+      window.location.href = 'https://' + domain;
+    } catch (e) {
+      continueBtn.disabled = false;
+      continueBtn.textContent = 'Continue Anyway (5 min bypass)';
+    }
   });
 }

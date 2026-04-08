@@ -95,7 +95,7 @@ function clearDropIndicators() {
   });
 }
 
-function renderSites(blockedSites, siteOrder = []) {
+function renderSites(blockedSites, siteOrder = [], expandedDomain = null) {
   sitesList.innerHTML = '';
   const allDomains = Object.keys(blockedSites);
   
@@ -243,7 +243,7 @@ function renderSites(blockedSites, siteOrder = []) {
       if (data.blockedSites[domain]) {
         data.blockedSites[domain].dailyLimit = newLimit;
         await setStorage(data);
-        renderSites(data.blockedSites, data.siteOrder);
+        renderSites(data.blockedSites, data.siteOrder, domain);
       }
     });
     
@@ -252,7 +252,7 @@ function renderSites(blockedSites, siteOrder = []) {
       if (data.blockedSites[domain]) {
         data.blockedSites[domain].hardBlock = e.target.checked;
         await setStorage(data);
-        renderSites(data.blockedSites, data.siteOrder);
+        renderSites(data.blockedSites, data.siteOrder, domain);
       }
     });
     
@@ -303,6 +303,11 @@ function renderSites(blockedSites, siteOrder = []) {
     
     sitesList.appendChild(li);
   });
+
+  if (expandedDomain && currentView === 'list') {
+    const expandItem = sitesList.querySelector(`.site-item[data-domain="${CSS.escape(expandedDomain)}"]`);
+    if (expandItem) expandItem.classList.add('expanded');
+  }
 }
 
 async function addSite() {

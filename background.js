@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'focusMode';
 const ALARM_NAME = 'dailyReset';
+const BYPASS_MS = 300000;
 
 async function getStorage() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -79,6 +80,17 @@ async function shouldBlock(url) {
   return { block: false, domain: matchedDomain, timeRemaining: site.dailyLimit - site.timeSpent };
 }
 
+/* ── Bypass ────────────────────────────────────────────────────────── */
+
+async function isBypassed(tabId) {
+  const key = 'bypass:' + tabId;
+  const data = await chrome.storage.local.get(key);
+  const t = data[key];
+  return typeof t === 'number' && Date.now() - t < BYPASS_MS;
+}
+
+/* ── Time tracking ─────────────────────────────────────────────────── */
+
 const activeTabTimers = new Map();
 
 async function startTracking(tabId, domain) {
@@ -90,7 +102,7 @@ async function startTracking(tabId, domain) {
     domain,
     startTime: Date.now(),
     interval: setInterval(async () => {
-      await incrementTimeSpent(domain, 1);
+      await incrementTimeSpent(tabId, domain, 1);
     }, 60000)
   });
 }
@@ -103,79 +115,59 @@ function stopTracking(tabId) {
     const elapsedMinutes = elapsedMs / 60000;
     const fractionalMinutes = elapsedMinutes % 1;
     if (fractionalMinutes > 0) {
-      incrementTimeSpent(timer.domain, fractionalMinutes);
+      incrementTimeSpent(tabId, timer.domain, fractionalMinutes);
     }
     activeTabTimers.delete(tabId);
   }
 }
 
-async function incrementTimeSpent(domain, minutes) {
+async function incrementTimeSpent(sourceTabId, domain, minutes) {
   const data = await getStorage();
-  if (data.blockedSites[domain]) {
-    data.blockedSites[domain].timeSpent = (data.blockedSites[domain].timeSpent || 0) + minutes;
-    await setStorage(data);
-    
-    const site = data.blockedSites[domain];
-    if (site.dailyLimit > 0 && site.timeSpent >= site.dailyLimit) {
-      const tabs = await chrome.tabs.query({});
-      for (const tab of tabs) {
-        if (tab.url && isBlockedDomain(tab.url, { [domain]: site }) === domain) {
-          redirectToBlocked(tab.id, domain, 'limitReached', site.timeSpent, site.dailyLimit, site.hardBlock);
-        }
+  if (!data.blockedSites[domain]) return;
+
+  data.blockedSites[domain].timeSpent = (data.blockedSites[domain].timeSpent || 0) + minutes;
+  await setStorage(data);
+  
+  const site = data.blockedSites[domain];
+  if (site.dailyLimit > 0 && site.timeSpent >= site.dailyLimit) {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (tab.url && isBlockedDomain(tab.url, { [domain]: site }) === domain) {
+        if (await isBypassed(tab.id)) continue;
+        redirectToBlocked(tab.id, domain, 'limitReached', site.timeSpent, site.dailyLimit, site.hardBlock);
       }
     }
   }
 }
 
+/* ── Redirect to blocked page ──────────────────────────────────────── */
+
 function redirectToBlocked(tabId, domain, reason, timeSpent = 0, dailyLimit = 0, hardBlock = true) {
   const params = new URLSearchParams({
     domain,
     reason,
-    timeSpent: timeSpent.toString(),
-    dailyLimit: dailyLimit.toString(),
-    hardBlock: hardBlock.toString()
+    timeSpent: String(Math.round(Number(timeSpent) || 0)),
+    dailyLimit: String(Math.round(Number(dailyLimit) || 0)),
+    hardBlock: hardBlock.toString(),
+    tabId: String(tabId)
   });
   chrome.tabs.update(tabId, {
     url: chrome.runtime.getURL(`blocked/blocked.html?${params}`)
   });
 }
 
-const bypassedTabs = new Map();
-const BYPASS_SESSION_KEY = 'bypassStartTimes';
-const BYPASS_MS = 300000;
-
-async function getBypassStartTime(tabId, domain) {
-  const key = `${tabId}-${domain}`;
-  let t = bypassedTabs.get(key);
-  if (t != null) return t;
-  const data = await chrome.storage.session.get(BYPASS_SESSION_KEY);
-  const map = data[BYPASS_SESSION_KEY] || {};
-  t = map[key];
-  if (t != null) bypassedTabs.set(key, t);
-  return t;
-}
-
-async function setBypassStartTime(tabId, domain) {
-  const key = `${tabId}-${domain}`;
-  const now = Date.now();
-  bypassedTabs.set(key, now);
-  const data = await chrome.storage.session.get(BYPASS_SESSION_KEY);
-  const map = { ...(data[BYPASS_SESSION_KEY] || {}), [key]: now };
-  await chrome.storage.session.set({ [BYPASS_SESSION_KEY]: map });
-}
+/* ── Navigation interception ───────────────────────────────────────── */
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   if (details.frameId !== 0) return;
+  if (!/^https?:/i.test(details.url)) return;
 
   const result = await shouldBlock(details.url);
 
   if (result.block) {
-    const bypassTime = await getBypassStartTime(details.tabId, result.domain);
-
-    if (!result.hardBlock && bypassTime != null && Date.now() - bypassTime < BYPASS_MS) {
+    if (!result.hardBlock && await isBypassed(details.tabId)) {
       return;
     }
-
     redirectToBlocked(details.tabId, result.domain, result.reason, result.timeSpent, result.dailyLimit, result.hardBlock);
   }
 });
@@ -223,20 +215,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender) => {
   const tabId = message.tabId ?? sender.tab?.id;
+  if (typeof tabId !== 'number') return;
 
-  if (message.action === 'goBack' && tabId != null) {
+  if (message.action === 'goBack') {
     chrome.tabs.goBack(tabId).catch(() => {
       chrome.tabs.update(tabId, { url: 'chrome://newtab' }).catch(() => {
         chrome.tabs.remove(tabId);
       });
     });
-  }
-
-  if (message.action === 'continueAnyway' && tabId != null && message.domain) {
-    void setBypassStartTime(tabId, message.domain);
-    chrome.tabs.update(tabId, { url: `https://${message.domain}` });
   }
 });
 
