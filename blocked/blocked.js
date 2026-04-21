@@ -14,9 +14,7 @@ const quotes = [
 const params = new URLSearchParams(window.location.search);
 const domain = params.get('domain');
 const reason = params.get('reason') || 'blocked';
-const timeSpent = parseInt(params.get('timeSpent'), 10) || 0;
 const dailyLimit = parseInt(params.get('dailyLimit'), 10) || 0;
-const hardBlock = params.get('hardBlock') === 'true';
 const tabIdFromUrl = params.get('tabId');
 const parsedTabId =
   tabIdFromUrl != null && tabIdFromUrl !== '' ? parseInt(tabIdFromUrl, 10) : NaN;
@@ -39,16 +37,9 @@ if (domain) {
   document.querySelector('.message').textContent = 'This site is blocked to help you stay in flow.';
 }
 
-if (reason === 'limitReached' || reason === 'noLimit') {
+if (reason === 'limitReached') {
   document.getElementById('limitInfo').classList.remove('hidden');
   document.getElementById('dailyLimit').textContent = dailyLimit || '0';
-  
-  if (hardBlock) {
-    document.getElementById('hardBlockInfo').classList.remove('hidden');
-  } else {
-    document.getElementById('warningInfo').classList.remove('hidden');
-    document.getElementById('continueSection').classList.remove('hidden');
-  }
 }
 
 const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -67,21 +58,3 @@ document.getElementById('goBackBtn').addEventListener('click', async () => {
   window.location.href = 'https://google.com';
 });
 
-const continueBtn = document.getElementById('continueBtn');
-if (continueBtn) {
-  continueBtn.addEventListener('click', async () => {
-    if (!domain) return;
-    const tabId = await resolveTabId();
-    if (tabId == null) return;
-    continueBtn.disabled = true;
-    continueBtn.textContent = 'Redirecting…';
-    try {
-      const key = 'bypass:' + tabId;
-      await chrome.storage.local.set({ [key]: Date.now() });
-      window.location.href = 'https://' + domain;
-    } catch (e) {
-      continueBtn.disabled = false;
-      continueBtn.textContent = 'Continue Anyway (5 min bypass)';
-    }
-  });
-}

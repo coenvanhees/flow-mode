@@ -1,6 +1,5 @@
 const STORAGE_KEY = 'focusMode';
 const ALARM_NAME = 'dailyReset';
-const BYPASS_MS = 300000;
 
 async function getStorage() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -56,13 +55,17 @@ async function shouldBlock(url) {
   if (!matchedDomain) return { block: false };
   
   const site = data.blockedSites[matchedDomain];
+
+  const activeDays = site.activeDays ?? [true, true, true, true, true, true, true];
+  if (!activeDays[new Date().getDay()]) {
+    return { block: false, domain: matchedDomain };
+  }
   
   if (site.dailyLimit === 0) {
     return { 
       block: true, 
       domain: matchedDomain, 
-      reason: 'noLimit',
-      hardBlock: site.hardBlock
+      reason: 'noLimit'
     };
   }
   
@@ -72,21 +75,11 @@ async function shouldBlock(url) {
       domain: matchedDomain, 
       reason: 'limitReached', 
       timeSpent: site.timeSpent, 
-      dailyLimit: site.dailyLimit,
-      hardBlock: site.hardBlock
+      dailyLimit: site.dailyLimit
     };
   }
   
   return { block: false, domain: matchedDomain, timeRemaining: site.dailyLimit - site.timeSpent };
-}
-
-/* ── Bypass ────────────────────────────────────────────────────────── */
-
-async function isBypassed(tabId) {
-  const key = 'bypass:' + tabId;
-  const data = await chrome.storage.local.get(key);
-  const t = data[key];
-  return typeof t === 'number' && Date.now() - t < BYPASS_MS;
 }
 
 /* ── Time tracking ─────────────────────────────────────────────────── */
@@ -133,8 +126,7 @@ async function incrementTimeSpent(sourceTabId, domain, minutes) {
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
       if (tab.url && isBlockedDomain(tab.url, { [domain]: site }) === domain) {
-        if (await isBypassed(tab.id)) continue;
-        redirectToBlocked(tab.id, domain, 'limitReached', site.timeSpent, site.dailyLimit, site.hardBlock);
+        redirectToBlocked(tab.id, domain, 'limitReached', site.timeSpent, site.dailyLimit);
       }
     }
   }
@@ -142,13 +134,12 @@ async function incrementTimeSpent(sourceTabId, domain, minutes) {
 
 /* ── Redirect to blocked page ──────────────────────────────────────── */
 
-function redirectToBlocked(tabId, domain, reason, timeSpent = 0, dailyLimit = 0, hardBlock = true) {
+function redirectToBlocked(tabId, domain, reason, timeSpent = 0, dailyLimit = 0) {
   const params = new URLSearchParams({
     domain,
     reason,
     timeSpent: String(Math.round(Number(timeSpent) || 0)),
     dailyLimit: String(Math.round(Number(dailyLimit) || 0)),
-    hardBlock: hardBlock.toString(),
     tabId: String(tabId)
   });
   chrome.tabs.update(tabId, {
@@ -165,10 +156,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   const result = await shouldBlock(details.url);
 
   if (result.block) {
-    if (!result.hardBlock && await isBypassed(details.tabId)) {
-      return;
-    }
-    redirectToBlocked(details.tabId, result.domain, result.reason, result.timeSpent, result.dailyLimit, result.hardBlock);
+    redirectToBlocked(details.tabId, result.domain, result.reason, result.timeSpent, result.dailyLimit);
   }
 });
 

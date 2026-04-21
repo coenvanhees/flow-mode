@@ -8,8 +8,13 @@ const emptyState = document.getElementById('emptyState');
 const siteTemplate = document.getElementById('siteTemplate');
 const viewToggle = document.getElementById('viewToggle');
 const sitesCount = document.getElementById('sitesCount');
+const dayToggleModal = document.getElementById('dayToggleModal');
+const modalDomain = document.getElementById('modalDomain');
+const modalCancel = document.getElementById('modalCancel');
+const modalConfirm = document.getElementById('modalConfirm');
 
 let currentView = 'list';
+let pendingDayToggle = null;
 
 async function getStorage() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -43,8 +48,16 @@ function formatTime(minutes) {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
+function isSiteActiveToday(site) {
+  const days = site.activeDays ?? [true, true, true, true, true, true, true];
+  return days[new Date().getDay()];
+}
+
 function getStatusInfo(site) {
-  if (site.hardBlock || site.dailyLimit === 0) {
+  if (!isSiteActiveToday(site)) {
+    return { status: 'ok', label: 'Off today' };
+  }
+  if (site.dailyLimit === 0) {
     return { status: 'blocked', label: 'Blocked' };
   }
   const percentage = (site.timeSpent / site.dailyLimit) * 100;
@@ -57,10 +70,8 @@ function getStatusInfo(site) {
 }
 
 function getModeLabel(site) {
-  if (site.dailyLimit === 0) {
-    return site.hardBlock ? 'Always blocked' : 'Always warned';
-  }
-  return site.hardBlock ? 'Hard block' : 'Soft block';
+  if (site.dailyLimit === 0) return 'Always blocked';
+  return 'Time limit';
 }
 
 let draggedItem = null;
@@ -151,10 +162,10 @@ function renderSites(blockedSites, siteOrder = [], expandedDomain = null) {
     const progressFill = li.querySelector('.progress-fill');
     const progressText = li.querySelector('.progress-text');
     
-    if (site.hardBlock || site.dailyLimit === 0) {
+    if (site.dailyLimit === 0) {
       progressFill.style.width = '100%';
       progressFill.classList.add('danger');
-      progressText.textContent = 'Blocked';
+      progressText.textContent = 'Always blocked';
     } else {
       const percentage = Math.min((site.timeSpent / site.dailyLimit) * 100, 100);
       progressFill.style.width = `${percentage}%`;
@@ -167,37 +178,50 @@ function renderSites(blockedSites, siteOrder = [], expandedDomain = null) {
       progressText.textContent = `${Math.round(site.timeSpent)} / ${site.dailyLimit} min`;
     }
     
-    const hardBlockToggle = li.querySelector('.hard-block-toggle');
     const modeDescription = li.querySelector('.mode-description');
-    hardBlockToggle.checked = site.hardBlock;
     
     if (site.dailyLimit === 0) {
-      if (site.hardBlock) {
-        modeDescription.textContent = 'Always blocked — completely inaccessible';
-        modeDescription.classList.add('hard-mode');
-        modeDescription.classList.remove('soft-mode');
-      } else {
-        modeDescription.textContent = 'Always warned — shows warning, but you can bypass';
-        modeDescription.classList.add('soft-mode');
-        modeDescription.classList.remove('hard-mode');
-      }
-    } else if (site.hardBlock) {
-      modeDescription.textContent = 'Blocked after time limit — no access allowed';
-      modeDescription.classList.add('hard-mode');
-      modeDescription.classList.remove('soft-mode');
+      modeDescription.textContent = 'Always blocked — completely inaccessible';
     } else {
-      modeDescription.textContent = 'Warning only — reminds you, but you can continue';
-      modeDescription.classList.add('soft-mode');
-      modeDescription.classList.remove('hard-mode');
+      modeDescription.textContent = 'Blocked for the day once time runs out';
     }
     
+    const activeDays = site.activeDays ?? [true, true, true, true, true, true, true];
+    const todayIndex = new Date().getDay();
+    li.querySelectorAll('.day-btn').forEach(btn => {
+      const dayIndex = parseInt(btn.dataset.day);
+      if (activeDays[dayIndex]) btn.classList.add('active');
+      if (dayIndex === todayIndex) btn.classList.add('today-marker');
+    });
+
+    li.querySelectorAll('.day-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const dayIndex = parseInt(btn.dataset.day);
+        const data = await getStorage();
+        if (!data.blockedSites[domain]) return;
+
+        const today = new Date().toDateString();
+        const lastToggle = data.blockedSites[domain].lastDayToggle;
+
+        if (lastToggle === today) {
+          pendingDayToggle = { domain, dayIndex };
+          modalDomain.textContent = domain;
+          dayToggleModal.classList.remove('hidden');
+          return;
+        }
+
+        await applyDayToggle(domain, dayIndex);
+      });
+    });
+
     siteItem.addEventListener('click', (e) => {
       if (currentView !== 'list') return;
       if (e.target.closest('.btn-delete') || 
           e.target.closest('.time-slider') || 
-          e.target.closest('.toggle') ||
           e.target.closest('input') ||
-          e.target.closest('.drag-handle')) {
+          e.target.closest('.drag-handle') ||
+          e.target.closest('.day-btn')) {
         return;
       }
       
@@ -242,15 +266,6 @@ function renderSites(blockedSites, siteOrder = [], expandedDomain = null) {
       const data = await getStorage();
       if (data.blockedSites[domain]) {
         data.blockedSites[domain].dailyLimit = newLimit;
-        await setStorage(data);
-        renderSites(data.blockedSites, data.siteOrder, domain);
-      }
-    });
-    
-    hardBlockToggle.addEventListener('change', async (e) => {
-      const data = await getStorage();
-      if (data.blockedSites[domain]) {
-        data.blockedSites[domain].hardBlock = e.target.checked;
         await setStorage(data);
         renderSites(data.blockedSites, data.siteOrder, domain);
       }
@@ -334,8 +349,8 @@ async function addSite() {
   
   data.blockedSites[domain] = {
     dailyLimit: 30,
-    hardBlock: false,
-    timeSpent: 0
+    timeSpent: 0,
+    activeDays: [true, true, true, true, true, true, true]
   };
   
   await setStorage(data);
@@ -373,6 +388,38 @@ function setView(view) {
   
   chrome.storage.local.set({ [VIEW_PREF_KEY]: view });
 }
+
+async function applyDayToggle(domain, dayIndex) {
+  const data = await getStorage();
+  if (!data.blockedSites[domain]) return;
+  if (!data.blockedSites[domain].activeDays) {
+    data.blockedSites[domain].activeDays = [true, true, true, true, true, true, true];
+  }
+  data.blockedSites[domain].activeDays[dayIndex] = !data.blockedSites[domain].activeDays[dayIndex];
+  data.blockedSites[domain].lastDayToggle = new Date().toDateString();
+  await setStorage(data);
+  renderSites(data.blockedSites, data.siteOrder, domain);
+}
+
+modalCancel.addEventListener('click', () => {
+  pendingDayToggle = null;
+  dayToggleModal.classList.add('hidden');
+});
+
+modalConfirm.addEventListener('click', async () => {
+  if (pendingDayToggle) {
+    await applyDayToggle(pendingDayToggle.domain, pendingDayToggle.dayIndex);
+    pendingDayToggle = null;
+  }
+  dayToggleModal.classList.add('hidden');
+});
+
+dayToggleModal.addEventListener('click', (e) => {
+  if (e.target === dayToggleModal) {
+    pendingDayToggle = null;
+    dayToggleModal.classList.add('hidden');
+  }
+});
 
 async function init() {
   const viewPref = await chrome.storage.local.get(VIEW_PREF_KEY);

@@ -1,8 +1,15 @@
 /* Shared design tokens — import once at the top of each surface stylesheet. */
 :root {
-  /* System UI stack: native fonts on each platform */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
     'Helvetica Neue', Arial, sans-serif;
+
+  /* Type scale — 5 steps + 1 compact exception */
+  --text-2xs: 9px;   /* day-picker buttons only */
+  --text-xs: 11px;   /* badges, captions, micro-labels */
+  --text-sm: 12px;   /* secondary body, control labels */
+  --text-base: 13px; /* primary body, inputs, buttons */
+  --text-lg: 15px;   /* subheadings, emphasis */
+  --text-xl: 18px;   /* page titles */
 }
 
 html {

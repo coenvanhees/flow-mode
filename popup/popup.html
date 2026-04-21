@@ -55,6 +55,10 @@
       </div>
       <ul id="sitesList" class="list-view"></ul>
     </section>
+
+    <footer class="made-by">
+      made by: <a href="https://x.com/CoenHees" target="_blank" rel="noopener">@coenhees</a>
+    </footer>
   </div>
 
   <template id="siteTemplate">
@@ -104,20 +108,39 @@
             </div>
             <span class="progress-text"></span>
           </div>
-          <div class="mode-toggle">
-            <label class="toggle-label">
-              <span class="toggle-title">Hard block</span>
-              <div class="toggle">
-                <input type="checkbox" class="hard-block-toggle">
-                <span class="toggle-slider"></span>
-              </div>
-            </label>
-          </div>
           <div class="mode-description"></div>
+          <div class="day-picker">
+            <span class="day-picker-label">Active days</span>
+            <div class="day-picker-days">
+              <button type="button" class="day-btn" data-day="1">M</button>
+              <button type="button" class="day-btn" data-day="2">T</button>
+              <button type="button" class="day-btn" data-day="3">W</button>
+              <button type="button" class="day-btn" data-day="4">T</button>
+              <button type="button" class="day-btn" data-day="5">F</button>
+              <button type="button" class="day-btn" data-day="6">S</button>
+              <button type="button" class="day-btn" data-day="0">S</button>
+            </div>
+          </div>
         </div>
       </div>
     </li>
   </template>
+
+  <div class="modal-overlay hidden" id="dayToggleModal">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p class="modal-title">Already changed today</p>
+      <p class="modal-message">You've already toggled a day for <strong id="modalDomain"></strong> today. Are you sure you want to change it again?</p>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
+        <button type="button" class="modal-btn modal-btn-confirm" id="modalConfirm">Change anyway</button>
+      </div>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>

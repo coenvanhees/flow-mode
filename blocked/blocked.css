@@ -42,7 +42,7 @@ body {
 }
 
 .blocked-brand-name {
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: #1a1a1a;
 }
@@ -57,7 +57,7 @@ body {
 }
 
 .message {
-  font-size: 16px;
+  font-size: var(--text-lg);
   color: #666;
   margin-bottom: 24px;
   line-height: 1.5;
@@ -79,40 +79,12 @@ body {
   color: #92400e;
 }
 
-.hard-block-info {
-  background: #fecaca;
-  color: #991b1b;
-}
-
-.warning-info {
-  background: #fef3c7;
-  color: #92400e;
-}
 
 .info-box p {
-  font-size: 14px;
+  font-size: var(--text-base);
   line-height: 1.5;
 }
 
-.block-badge,
-.warning-badge {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 10px;
-}
-
-.block-badge {
-  background: #b91c1c;
-  color: white;
-}
-
-.warning-badge {
-  background: #f59e0b;
-  color: white;
-}
 
 .quote {
   background: #f9fafb;
@@ -122,7 +94,7 @@ body {
 }
 
 .quote p {
-  font-size: 15px;
+  font-size: var(--text-lg);
   font-style: italic;
   color: #4b5563;
   line-height: 1.6;
@@ -138,7 +110,7 @@ body {
 .btn {
   padding: 12px 24px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
@@ -164,29 +136,9 @@ body {
   background: #e5e7eb;
 }
 
-.continue-section {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.continue-text {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.btn-warning {
-  background: #f59e0b;
-  color: white;
-}
-
-.btn-warning:hover {
-  background: #d97706;
-}
 
 .hint {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: #999;
   margin-top: 20px;
 }
