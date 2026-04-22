@@ -79,12 +79,12 @@
   --c-border-hover: #4a4a68;
   --c-border-handle: #4a4a68;
 
-  --c-accent: #34d399;
-  --c-accent-hover: #10b981;
-  --c-accent-ring: rgba(52, 211, 153, 0.15);
+  --c-accent: #6ec9a8;
+  --c-accent-hover: #5ab893;
+  --c-accent-ring: rgba(110, 201, 168, 0.12);
 
-  --c-ok-bg: #06372a;
-  --c-ok-text: #34d399;
+  --c-ok-bg: #0e2e24;
+  --c-ok-text: #6ec9a8;
   --c-warn-bg: #3b2a08;
   --c-warn-text: #fbbf24;
   --c-warn-fill: #f59e0b;
@@ -100,13 +100,13 @@
   --c-overlay: rgba(0, 0, 0, 0.6);
   --c-shadow-soft: rgba(0, 0, 0, 0.3);
   --c-shadow-modal: rgba(0, 0, 0, 0.4);
-  --c-shadow-expanded: rgba(52, 211, 153, 0.1);
+  --c-shadow-expanded: rgba(110, 201, 168, 0.08);
 
   --c-btn-muted: #2a2a45;
   --c-btn-muted-hover: #3a3a58;
 
   --c-drag-bg: #3a3a58;
-  --c-drag-target-bg: #0a2e1e;
+  --c-drag-target-bg: #0e2e24;
 }
 
 html {
