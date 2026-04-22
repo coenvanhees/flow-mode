@@ -10,6 +10,103 @@
   --text-base: 13px; /* primary body, inputs, buttons */
   --text-lg: 15px;   /* subheadings, emphasis */
   --text-xl: 18px;   /* page titles */
+
+  /* Colors */
+  --c-bg: #fff;
+  --c-bg-surface: #f9fafb;
+  --c-bg-muted: #f5f5f5;
+  --c-bg-subtle: #f3f4f6;
+  --c-bg-quote: #f9fafb;
+
+  --c-text: #1a1a1a;
+  --c-text-secondary: #666;
+  --c-text-muted: #999;
+  --c-text-faint: #aaa;
+  --c-text-btn-muted: #374151;
+
+  --c-border: #e5e7eb;
+  --c-border-input: #e0e0e0;
+  --c-border-light: #f0f0f0;
+  --c-border-hover: #d1d5db;
+  --c-border-handle: #ccc;
+
+  --c-accent: #10b981;
+  --c-accent-hover: #059669;
+  --c-accent-ring: rgba(16, 185, 129, 0.1);
+
+  --c-ok-bg: #d1fae5;
+  --c-ok-text: #059669;
+  --c-warn-bg: #fef3c7;
+  --c-warn-text: #d97706;
+  --c-warn-fill: #f59e0b;
+  --c-danger-bg: #fecaca;
+  --c-danger-text: #b91c1c;
+  --c-danger-fill: #dc2626;
+
+  --c-mode-bg: #fef2f2;
+  --c-mode-text: #b91c1c;
+  --c-info-bg: #fef3c7;
+  --c-info-text: #92400e;
+
+  --c-overlay: rgba(0, 0, 0, 0.4);
+  --c-shadow-soft: rgba(0, 0, 0, 0.08);
+  --c-shadow-modal: rgba(0, 0, 0, 0.15);
+  --c-shadow-expanded: rgba(16, 185, 129, 0.1);
+
+  --c-btn-muted: #f3f4f6;
+  --c-btn-muted-hover: #e5e7eb;
+
+  --c-drag-bg: #e5e7eb;
+  --c-drag-target-bg: #f0fdf4;
+}
+
+[data-theme="dark"] {
+  --c-bg: #1a1a2e;
+  --c-bg-surface: #222240;
+  --c-bg-muted: #2a2a45;
+  --c-bg-subtle: #252542;
+  --c-bg-quote: #222240;
+
+  --c-text: #e8e8f0;
+  --c-text-secondary: #a0a0b8;
+  --c-text-muted: #7a7a94;
+  --c-text-faint: #6a6a82;
+  --c-text-btn-muted: #c8c8d8;
+
+  --c-border: #3a3a58;
+  --c-border-input: #3a3a58;
+  --c-border-light: #2e2e4a;
+  --c-border-hover: #4a4a68;
+  --c-border-handle: #4a4a68;
+
+  --c-accent: #34d399;
+  --c-accent-hover: #10b981;
+  --c-accent-ring: rgba(52, 211, 153, 0.15);
+
+  --c-ok-bg: #06372a;
+  --c-ok-text: #34d399;
+  --c-warn-bg: #3b2a08;
+  --c-warn-text: #fbbf24;
+  --c-warn-fill: #f59e0b;
+  --c-danger-bg: #3b1010;
+  --c-danger-text: #f87171;
+  --c-danger-fill: #ef4444;
+
+  --c-mode-bg: #3b1010;
+  --c-mode-text: #f87171;
+  --c-info-bg: #3b2a08;
+  --c-info-text: #fbbf24;
+
+  --c-overlay: rgba(0, 0, 0, 0.6);
+  --c-shadow-soft: rgba(0, 0, 0, 0.3);
+  --c-shadow-modal: rgba(0, 0, 0, 0.4);
+  --c-shadow-expanded: rgba(52, 211, 153, 0.1);
+
+  --c-btn-muted: #2a2a45;
+  --c-btn-muted-hover: #3a3a58;
+
+  --c-drag-bg: #3a3a58;
+  --c-drag-target-bg: #0a2e1e;
 }
 
 html {

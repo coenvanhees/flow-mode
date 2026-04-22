@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'focusMode';
 const VIEW_PREF_KEY = 'focusModeViewPref';
+const THEME_KEY = 'focusModeTheme';
 
 const urlInput = document.getElementById('urlInput');
 const addBtn = document.getElementById('addBtn');
@@ -12,9 +13,20 @@ const dayToggleModal = document.getElementById('dayToggleModal');
 const modalDomain = document.getElementById('modalDomain');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
+const themeToggle = document.getElementById('themeToggle');
 
 let currentView = 'list';
 let pendingDayToggle = null;
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+themeToggle.addEventListener('click', async () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  await chrome.storage.local.set({ [THEME_KEY]: next });
+});
 
 async function getStorage() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -422,9 +434,10 @@ dayToggleModal.addEventListener('click', (e) => {
 });
 
 async function init() {
-  const viewPref = await chrome.storage.local.get(VIEW_PREF_KEY);
-  currentView = viewPref[VIEW_PREF_KEY] || 'list';
+  const prefs = await chrome.storage.local.get([VIEW_PREF_KEY, THEME_KEY]);
+  currentView = prefs[VIEW_PREF_KEY] || 'list';
   setView(currentView);
+  applyTheme(prefs[THEME_KEY] || 'light');
 
   const data = await getStorage();
   renderSites(data.blockedSites, data.siteOrder);

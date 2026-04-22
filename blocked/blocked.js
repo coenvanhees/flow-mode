@@ -1,3 +1,7 @@
+chrome.storage.local.get('focusModeTheme').then((result) => {
+  document.documentElement.setAttribute('data-theme', result.focusModeTheme || 'light');
+});
+
 const quotes = [
   "The secret of getting ahead is getting started.",
   "Focus on being productive instead of busy.",

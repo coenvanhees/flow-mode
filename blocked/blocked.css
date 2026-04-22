@@ -11,18 +11,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-  color: #1a1a1a;
+  background: var(--c-bg-surface);
+  color: var(--c-text);
   padding: 20px;
 }
 
 .container {
   max-width: 480px;
   text-align: center;
-  background: white;
+  background: var(--c-bg);
   padding: 48px 40px;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 40px var(--c-shadow-soft);
 }
 
 .blocked-brand {
@@ -44,12 +44,12 @@ body {
 .blocked-brand-name {
   font-size: var(--text-xl);
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--c-text);
 }
 
 .icon {
   margin-bottom: 24px;
-  color: #dc2626;
+  color: var(--c-danger-fill);
 }
 
 .icon svg {
@@ -58,14 +58,14 @@ body {
 
 .message {
   font-size: var(--text-lg);
-  color: #666;
+  color: var(--c-text-secondary);
   margin-bottom: 24px;
   line-height: 1.5;
 }
 
 .domain {
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--c-text);
 }
 
 .info-box {
@@ -75,19 +75,17 @@ body {
 }
 
 .limit-info {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--c-info-bg);
+  color: var(--c-info-text);
 }
-
 
 .info-box p {
   font-size: var(--text-base);
   line-height: 1.5;
 }
 
-
 .quote {
-  background: #f9fafb;
+  background: var(--c-bg-quote);
   padding: 20px 24px;
   border-radius: 12px;
   margin-bottom: 28px;
@@ -96,7 +94,7 @@ body {
 .quote p {
   font-size: var(--text-lg);
   font-style: italic;
-  color: #4b5563;
+  color: var(--c-text-secondary);
   line-height: 1.6;
 }
 
@@ -119,27 +117,26 @@ body {
 }
 
 .btn-primary {
-  background: #10b981;
+  background: var(--c-accent);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #059669;
+  background: var(--c-accent-hover);
 }
 
 .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--c-btn-muted);
+  color: var(--c-text-btn-muted);
 }
 
 .btn-secondary:hover {
-  background: #e5e7eb;
+  background: var(--c-btn-muted-hover);
 }
-
 
 .hint {
   font-size: var(--text-xs);
-  color: #999;
+  color: var(--c-text-muted);
   margin-top: 20px;
 }
 
